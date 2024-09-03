@@ -1,0 +1,27 @@
+"use client";
+
+import { User } from "@prisma/client";
+import { Session } from "lucia";
+import React, { createContext, useContext } from "react";
+
+interface SessionContext {
+  user: User | null;
+  session: Session;
+}
+
+const SessionContext = createContext<SessionContext | null>(null);
+export default function SessionProvider({
+  children,
+  value,
+}: React.PropsWithChildren<{ value: SessionContext }>) {
+  return (
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+  );
+}
+export const useSession = () => {
+  const context = useContext(SessionContext);
+  if (!context) {
+    throw Error("useSession must be used within a SessionProvider");
+  }
+  return context;
+};

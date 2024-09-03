@@ -1,0 +1,309 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["tracing"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  username               String    @unique
+  password               String
+  displayName            String?   @unique
+  bio                    String?
+  avatarUrl              String?
+  coverImageUrl          String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  lastLoginAt            DateTime?
+  isVerified             Boolean   @default(false)
+  twoFactorEnabled       Boolean   @default(false)
+  twoFactorSecret        String?
+  posts                  Post[]
+  comments               Comment[]
+  likes                  Like[]
+  followers              Follow[]  @relation("FollowingUser")
+  following              Follow[]  @relation("FollowerUser")
+  sessions               Session[]
+  sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  friends                User[]          @relation("Friends")
+  friendsOf              User[]          @relation("Friends")
+  groups                 GroupMember[]
+  events                 EventAttendee[]
+  notifications          Notification[]
+  messages               Message[]
+  stories                Story[]
+  savedPosts             SavedPost[]
+  privacySettings        PrivacySettings?
+  blockedUsers           BlockedUser[]   @relation("BlockingUser")
+  blockedBy              BlockedUser[]   @relation("BlockedUser")
+  reportsMade            Report[]        @relation("ReportingUser")
+  reportsReceived        Report[]        @relation("ReportedUser")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Post {
+  id        String    @id @default(uuid())
+  content   String
+  imageUrl  String?
+  videoUrl  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
+  comments  Comment[]
+  likes     Like[]
+  tags      Tag[]
+  savedBy   SavedPost[]
+  group     Group?    @relation(fields: [groupId], references: [id])
+  groupId   String?
+  reports   Report[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  parentComment Comment? @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  parentCommentId String?
+  replies   Comment[] @relation("CommentReplies")
+  likes     Like[]
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post?    @relation(fields: [postId], references: [id])
+  postId    String?
+  comment   Comment? @relation(fields: [commentId], references: [id])
+  commentId String?
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  follower    User     @relation("FollowerUser", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("FollowingUser", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model FriendRequest {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  status     FriendRequestStatus
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User @relation("SentFriendRequests", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedFriendRequests", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String @unique
+  posts Post[]
+}
+
+model Group {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  members     GroupMember[]
+  posts       Post[]
+  privacy     GroupPrivacy @default(PUBLIC)
+}
+
+model GroupMember {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+  group     Group      @relation(fields: [groupId], references: [id])
+  groupId   String
+  role      GroupRole  @default(MEMBER)
+  joinedAt  DateTime   @default(now())
+
+  @@unique([userId, groupId])
+}
+
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime?
+  location    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  organizer   User      @relation(fields: [organizerId], references: [id])
+  organizerId String
+  attendees   EventAttendee[]
+}
+
+model EventAttendee {
+  id        String       @id @default(uuid())
+  user      User         @relation(fields: [userId], references: [id])
+  userId    String
+  event     Event        @relation(fields: [eventId], references: [id])
+  eventId   String
+  status    EventStatus  @default(INTERESTED)
+  createdAt DateTime     @default(now())
+
+  @@unique([userId, eventId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  content   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String
+  receiverId String
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+}
+
+model Story {
+  id        String   @id @default(uuid())
+  content   String?
+  imageUrl  String?
+  videoUrl  String?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+model SavedPost {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model PrivacySettings {
+  id             String  @id @default(uuid())
+  user           User    @relation(fields: [userId], references: [id])
+  userId         String  @unique
+  profileVisibility PrivacyLevel @default(PUBLIC)
+  postVisibility    PrivacyLevel @default(PUBLIC)
+  messagePermission PrivacyLevel @default(FRIENDS)
+}
+
+model BlockedUser {
+  id            String   @id @default(uuid())
+  blockingUser  User     @relation("BlockingUser", fields: [blockingUserId], references: [id])
+  blockingUserId String
+  blockedUser   User     @relation("BlockedUser", fields: [blockedUserId], references: [id])
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  @@unique([blockingUserId, blockedUserId])
+}
+
+model Report {
+  id          String      @id @default(uuid())
+  reporter    User        @relation("ReportingUser", fields: [reporterId], references: [id])
+  reporterId  String
+  reportedUser User?      @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reportedUserId String?
+  post        Post?       @relation(fields: [postId], references: [id])
+  postId      String?
+  reason      String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum GroupPrivacy {
+  PUBLIC
+  PRIVATE
+}
+
+enum GroupRole {
+  MEMBER
+  ADMIN
+  MODERATOR
+}
+
+enum EventStatus {
+  ATTENDING
+  MAYBE
+  DECLINED
+  INTERESTED
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  FRIEND_REQUEST
+  GROUP_INVITE
+  EVENT_INVITE
+  MESSAGE
+}
+
+enum PrivacyLevel {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}

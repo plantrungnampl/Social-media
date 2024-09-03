@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://default:Id6zxHU9fCMJ@ep-jolly-grass-a13ezga2-pooler.ap-southeast-1.aws.neon.tech:5432/verceldb?sslmode=require
+      
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=default
+      - POSTGRES_PASSWORD=Id6zxHU9fCMJ
+      - POSTGRES_DB=verceldb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+volumes:
+  postgres_data:
+  
+  
