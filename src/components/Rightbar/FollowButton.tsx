@@ -31,7 +31,8 @@ export const FollowButton: React.FC<{ userId: string, isFollowing: boolean }> = 
           ? "bg-green-100 text-green-600 hover:bg-red-100 hover:text-red-600"
           : "bg-blue-100 hover:bg-blue-200 text-blue-600"
       }`}
-    >
+    > 
+    
       {isLoading ? (
         <Loader2 className="w-3 h-3 animate-spin" />
       ) : isFollowing ? (

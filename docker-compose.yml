@@ -5,15 +5,14 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgres://default:Id6zxHU9fCMJ@ep-jolly-grass-a13ezga2-pooler.ap-southeast-1.aws.neon.tech:5432/verceldb?sslmode=require
-      
+      - DATABASE_URL=${POSTGRES_URL}
     depends_on:
       - db
   db:
     image: postgres:15
     environment:
-      - POSTGRES_USER=default
-      - POSTGRES_PASSWORD=Id6zxHU9fCMJ
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=verceldb
     volumes:
       - postgres_data:/var/lib/postgresql/data
