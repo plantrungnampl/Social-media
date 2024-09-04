@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback } from "react";
-// import { PostsList } from "@/components/Posts/PostsList";
 import { PostData, PostPage } from "@/lib/types";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -56,7 +55,6 @@ export const ForU: React.FC = () => {
   });
 
   if (status === "pending" && !isFetchingNextPage) {
-    // return <LoadingSpinner />;
     return <PostsListSkeleton />;
   }
 
@@ -65,9 +63,7 @@ export const ForU: React.FC = () => {
   }
 
   const flatPost: PostData[] = data?.pages.flatMap((page) => page.posts) || [];
-  // if (status === "success" && !flatPost.length && !hasNextPage) {
-  //   return <p>No more posts to load</p>;
-  // }
+  
   return (
     <div className="space-y-4">
       {flatPost.map((post) => (

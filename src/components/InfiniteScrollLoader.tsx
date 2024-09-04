@@ -1,9 +1,7 @@
 "use client";
 import React, { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
-import { PostsListSkeleton } from "./LoadingSkeletonPost";
 import { LoadingSpiner } from "./Loading/loadingSpiner";
-// import { LoadingSpinner } from "./LoadingSpinner";
 
 interface InfiniteScrollLoaderProps {
   hasNextPage: boolean | undefined;

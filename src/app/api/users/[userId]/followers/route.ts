@@ -35,9 +35,9 @@ export async function GET(
     }
     const data: FollowerInfo = {
       followers: user._count.followers,
-      isFollowerByUser:!!user.followers.length
+      isFollowerByUser: !!user.followers.length,
     };
-    return NextResponse.json(data)
+    return NextResponse.json(data);
   } catch (error) {
     console.log(error);
     return NextResponse.json(error);
